@@ -27,10 +27,12 @@ const dev = process.env.NODE_ENV !== "production";
 const nextServer = next({ dev });
 const handle = nextServer.getRequestHandler();
 
+const databaseUrl = "mongodb+srv://teambabysnow02:BNBtestnet@trendmusicnftbnbtestnet.0wpr2.mongodb.net/musicnft?retryWrites=true&w=majority"
+
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGODB_URL)
-  .then(() => console.log("DB connection successful!"))
+  .connect(databaseUrl)
+  .then(() => console.log("DB connection successful! ========================="))
   .catch((err) => console.error("DB connection failed:", err));
 
 // Middlewares
