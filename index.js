@@ -60,8 +60,16 @@ nextServer.prepare().then(() => {
   });
 
   // Start the server
-  const PORT = process.env.PORT || 3000; // Use Railway's PORT or fallback to 3000
-  app.listen(PORT, () => {
-    console.log(`App running on port ${PORT}....`);
-  });
+  const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// Prevent process exit in Railway
+process.on("SIGTERM", () => {
+  console.log("Process terminated! Restarting...");
+});
+process.on("SIGINT", () => {
+  console.log("Process interrupted! Restarting...");
+});
 });
