@@ -1,10 +1,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const app = express();
-const next = require("next");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const next = require("next");
+
+const app = express();
 
 // Import routes
 const authRoute = require("./Api/routes/auth");
@@ -27,13 +28,20 @@ const dev = process.env.NODE_ENV !== "production";
 const nextServer = next({ dev });
 const handle = nextServer.getRequestHandler();
 
-const databaseUrl = "mongodb+srv://teambabysnow02:BNBtestnet@trendmusicnftbnbtestnet.0wpr2.mongodb.net/musicnft?retryWrites=true&w=majority"
+// Connect to MongoDB (Using Environment Variable)
+const databaseUrl = process.env.MONGO_URI;
+if (!databaseUrl) {
+  console.error("Error: MONGO_URI is not defined. Please check your environment variables.");
+  process.exit(1);
+}
 
-// Connect to MongoDB
 mongoose
-  .connect(databaseUrl)
-  .then(() => console.log("DB connection successful! ========================="))
-  .catch((err) => console.error("DB connection failed:", err));
+  .connect(databaseUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ DB connection successful!"))
+  .catch((err) => {
+    console.error("❌ DB connection failed:", err);
+    process.exit(1);
+  });
 
 // Middlewares
 app.use(express.json());
@@ -54,22 +62,21 @@ app.use(errorHandler);
 
 // Prepare Next.js and start the server
 nextServer.prepare().then(() => {
-  // Handle all requests with Next.js
-  app.get("*", (req, res) => {
-    return handle(req, res);
+  // Serve Next.js pages
+  app.all("*", (req, res) => handle(req, res));
+
+  // Start the Express server
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 
-  // Start the server
-  const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  // Prevent process exit in Railway
+  process.on("SIGTERM", () => {
+    console.log("⚠️ Process terminated! Restarting...");
+  });
 
-// Prevent process exit in Railway
-process.on("SIGTERM", () => {
-  console.log("Process terminated! Restarting...");
-});
-process.on("SIGINT", () => {
-  console.log("Process interrupted! Restarting...");
-});
+  process.on("SIGINT", () => {
+    console.log("⚠️ Process interrupted! Restarting...");
+  });
 });
