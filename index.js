@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const next = require("next"); // Next.js must be initialized before express
+const next = require("next");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 
@@ -29,14 +29,23 @@ const dev = process.env.NODE_ENV !== "production";
 const nextServer = next({ dev });
 const handle = nextServer.getRequestHandler();
 
-// **Use the correct MongoDB connection**
-const databaseUrl = process.env.MONGO_URI; // ✅ Ensure this is correct!
+// Ensure MongoDB URI is set
+if (!process.env.MONGO_URI) {
+  console.error("❌ MONGO_URI is not defined in environment variables.");
+  process.exit(1);
+}
 
 // Connect to MongoDB
 mongoose
-  .connect(databaseUrl)
-  .then(() => console.log("DB connection successful!"))
-  .catch((err) => console.error("DB connection failed:", err));
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ DB connection successful!"))
+  .catch((err) => {
+    console.error("❌ DB connection failed:", err);
+    process.exit(1);
+  });
 
 // Middleware
 app.use(express.json());
@@ -58,22 +67,19 @@ app.use(errorHandler);
 // Prepare Next.js and start the server
 nextServer.prepare().then(() => {
   // Handle all requests with Next.js
-  app.all("*", (req, res) => {
-    return handle(req, res);
-  });
+  app.all("*", (req, res) => handle(req, res));
 
   // Start the server
   const PORT = process.env.PORT || 8080;
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 
   // Prevent process exit in Railway
   process.on("SIGTERM", () => {
-    console.log("Process terminated! Restarting...");
+    console.log("⚠️ Process terminated! Restarting...");
   });
-
   process.on("SIGINT", () => {
-    console.log("Process interrupted! Restarting...");
+    console.log("⚠️ Process interrupted! Restarting...");
   });
 });
